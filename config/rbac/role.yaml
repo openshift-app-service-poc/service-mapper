@@ -18,6 +18,30 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - binding.operators.coreos.com
+  resources:
+  - proxableservices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - binding.operators.coreos.com
   resources:
   - serviceproxies
@@ -48,6 +72,24 @@ rules:
   resources:
   - serviceresourcemaps
   verbs:
+  - create
+  - delete
   - get
   - list
+  - patch
+  - update
   - watch
+- apiGroups:
+  - binding.operators.coreos.com
+  resources:
+  - serviceresourcemaps/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - binding.operators.coreos.com
+  resources:
+  - serviceresourcemaps/status
+  verbs:
+  - get
+  - patch
+  - update

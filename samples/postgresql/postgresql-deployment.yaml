@@ -4,6 +4,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: spring-petclinic-postgresql
+  namespace: srm-sample
 stringData:
   database: spring-petclinic-postgresql-db
   username: spring-petclinic-postgresql-user
@@ -15,6 +16,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: spring-petclinic-postgresql
+  namespace: srm-sample
   labels:
     app: spring-petclinic-postgresql
   annotations:
@@ -67,6 +69,7 @@ metadata:
   labels:
     app: spring-petclinic-postgresql
   name: spring-petclinic-postgresql
+  namespace: srm-sample
 spec:
   ports:
     - port: 5432

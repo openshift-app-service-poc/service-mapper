@@ -35,21 +35,10 @@ spec:
           spec:
             description: ServiceProxySpec defines the desired state of ServiceProxy
             properties:
-              service_reference:
-                properties:
-                  api_group:
-                    type: string
-                  kind:
-                    type: string
-                  name:
-                    type: string
-                required:
-                - api_group
-                - kind
-                - name
-                type: object
+              proxable_service:
+                type: string
             required:
-            - service_reference
+            - proxable_service
             type: object
           status:
             description: ServiceProxyStatus defines the observed state of ServiceProxy
