@@ -1,0 +1,9 @@
+domain: binding.operators.coreos.com
+layout:
+- go.kubebuilder.io/v3
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
+projectName: sbo-1225
+repo: github.com/filariow/sbo-1225
+version: "3"
