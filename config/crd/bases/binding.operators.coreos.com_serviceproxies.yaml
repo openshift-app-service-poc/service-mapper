@@ -1,0 +1,71 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.9.2
+  creationTimestamp: null
+  name: serviceproxies.binding.operators.coreos.com
+spec:
+  group: binding.operators.coreos.com
+  names:
+    kind: ServiceProxy
+    listKind: ServiceProxyList
+    plural: serviceproxies
+    singular: serviceproxy
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ServiceProxy is the Schema for the serviceproxies API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ServiceProxySpec defines the desired state of ServiceProxy
+            properties:
+              service_reference:
+                properties:
+                  api_group:
+                    type: string
+                  kind:
+                    type: string
+                  name:
+                    type: string
+                required:
+                - api_group
+                - kind
+                - name
+                type: object
+            required:
+            - service_reference
+            type: object
+          status:
+            description: ServiceProxyStatus defines the observed state of ServiceProxy
+            properties:
+              binding:
+                properties:
+                  name:
+                    type: string
+                required:
+                - name
+                type: object
+            required:
+            - binding
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

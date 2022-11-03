@@ -1,0 +1,13 @@
+apiVersion: binding.operators.coreos.com/v1alpha1
+kind: ServiceProxy
+metadata:
+  name: serviceproxy-sample
+spec:
+  service_reference:
+    api_group: "apps/v1"
+    kind: "deployments"
+    name: "spring-petclinic-postgresql"
+status:
+  binding:
+    name: "service-proxy-sed"
+

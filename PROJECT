@@ -14,4 +14,12 @@ resources:
   kind: ServiceResourceMap
   path: github.com/filariow/sbo-1225/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: binding.operators.coreos.com
+  kind: ServiceProxy
+  path: github.com/filariow/sbo-1225/api/v1alpha1
+  version: v1alpha1
 version: "3"

@@ -1,0 +1,24 @@
+# permissions for end users to edit serviceproxies.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: serviceproxy-editor-role
+rules:
+- apiGroups:
+  - binding.operators.coreos.com
+  resources:
+  - serviceproxies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - binding.operators.coreos.com
+  resources:
+  - serviceproxies/status
+  verbs:
+  - get

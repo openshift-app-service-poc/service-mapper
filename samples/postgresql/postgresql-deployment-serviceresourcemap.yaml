@@ -1,0 +1,11 @@
+apiVersion: binding.operators.coreos.com/v1alpha1
+kind: ServiceResourceMap
+metadata:
+  name: serviceresourcemap-sample
+spec:
+  service_kind_reference:
+    api_group: "apps/v1"
+    kind: "deployments"
+  service_map:
+     sec1: "none"
+

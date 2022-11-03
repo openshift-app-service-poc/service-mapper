@@ -1,0 +1,53 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - binding.operators.coreos.com
+  resources:
+  - serviceproxies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - binding.operators.coreos.com
+  resources:
+  - serviceproxies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - binding.operators.coreos.com
+  resources:
+  - serviceproxies/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - binding.operators.coreos.com
+  resources:
+  - serviceresourcemaps
+  verbs:
+  - get
+  - list
+  - watch

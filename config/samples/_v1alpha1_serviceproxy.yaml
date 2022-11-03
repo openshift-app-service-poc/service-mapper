@@ -1,0 +1,6 @@
+apiVersion: binding.operators.coreos.com/v1alpha1
+kind: ServiceProxy
+metadata:
+  name: serviceproxy-sample
+spec:
+  # TODO(user): Add fields here
