@@ -3,7 +3,6 @@ package binding
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"fmt"
 	"strings"
 
@@ -22,7 +21,7 @@ func NewServiceEndpointDefinition(ctx context.Context,
 	sp *bindingoperatorscoreoscomv1alpha1.ServiceProxy,
 	obj interface{}) *corev1.Secret {
 
-	secrets := extractSecrets(ctx, client, sm.Namespace, sm.Spec.ServiceMap, obj)
+	secrets := extractSecrets(ctx, client, sp.Namespace, sm.Spec.ServiceMap, obj)
 
 	sed := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -39,13 +38,11 @@ func extractSecrets(ctx context.Context, client client.Client, namespace string,
 	l, _ := logr.FromContext(ctx)
 
 	for k, v := range rules {
-		l.Info("processing secret rule", "key", k, "value", v)
 		ss, err := processTarget(ctx, client, namespace, k, v, obj)
 		if err != nil {
 			l.Error(err, "can not process target", "target", obj, "rule", v)
 			continue
 		}
-		l.Info("processed secret rule", "key", k, "value", v, "secret", ss)
 
 		for k, v := range ss {
 			secrets[k] = v
@@ -79,9 +76,6 @@ func processRefTarget(ctx context.Context, cli client.Client, namespace string, 
 		return nil, err
 	}
 
-	l, _ := logr.FromContext(ctx)
-	l.Info("processing ref target", "refType", refType, "obj", obj)
-
 	switch refType {
 	case "objectType=Secret":
 		s := corev1.Secret{}
@@ -90,16 +84,16 @@ func processRefTarget(ctx context.Context, cli client.Client, namespace string, 
 			return nil, fmt.Errorf("can not retrieve Secret '%s/%s': %w", namespace, refObj, err)
 		}
 
-		l.Info("retrieved ref secret", "secret", s, "stringData", s.StringData)
-
 		d := make(map[string]string, len(s.Data))
 		for k, v := range s.Data {
-			v64, err := base64.StdEncoding.DecodeString(string(v))
-			if err != nil {
-				l.Error(err, "can not base64 decode secret entry", "key", k)
-			}
+			// var buf []byte
+			// _, err := base64.StdEncoding.Decode(buf, v)
+			// if err != nil {
+			// 	l.Error(err, "can not base64 decode secret entry", "key", k, "value", v)
+			// }
 
-			d[k] = string(v64)
+			// d[k] = bytes.NewBuffer(buf).String()
+			d[k] = string(v)
 		}
 
 		return d, nil

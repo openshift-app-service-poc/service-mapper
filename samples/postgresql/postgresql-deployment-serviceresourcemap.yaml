@@ -1,8 +1,7 @@
 apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceResourceMap
 metadata:
-  name: serviceresourcemap-sample
-  namespace: srm-sample
+  name: srm-sample-postgresql
 spec:
   service_kind_reference:
     api_group: "apps/v1"

@@ -32,18 +32,6 @@ rules:
 - apiGroups:
   - binding.operators.coreos.com
   resources:
-  - proxableservices
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - binding.operators.coreos.com
-  resources:
   - serviceproxies
   verbs:
   - create

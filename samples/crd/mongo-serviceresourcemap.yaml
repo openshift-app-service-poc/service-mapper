@@ -1,0 +1,15 @@
+apiVersion: binding.operators.coreos.com/v1alpha1
+kind: ServiceResourceMap
+metadata:
+  name: srm-sample-mongo
+spec:
+  service_kind_reference:
+    api_group: "mongodbcommunity.mongodb.com/v1"
+    kind: "mongodbcommunity"
+  service_map:
+    type: "mongodb"
+    service.binding: "path={.spec.users[0].passwordSecretRef.name},objectType=Secret"
+    username: "path={.spec.users[0].name}"
+    db: "path={.spec.users[0].db}"
+    host: "path={.metadata.name}"
+---

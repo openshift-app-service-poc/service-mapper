@@ -40,6 +40,7 @@ type ServiceResourceMapStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:scope=Cluster
 
 // ServiceResourceMap is the Schema for the serviceresourcemaps API
 type ServiceResourceMap struct {

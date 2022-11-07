@@ -25,14 +25,13 @@ import (
 
 // ServiceProxySpec defines the desired state of ServiceProxy
 type ServiceProxySpec struct {
-	ProxableService string `json:"proxable_service"`
+	ServiceResourceMapRef string         `json:"service_resource_map"`
+	ServiceInstance       NamespacedName `json:"service_instance"`
 }
 
-type ServiceReference struct {
-	ApiGroup  string `json:"api_group"`
-	Kind      string `json:"kind"`
+type NamespacedName struct {
 	Name      string `json:"name"`
-	Namespace string `json:"namespace,omitempty"`
+	Namespace string `json:"namespace"`
 }
 
 // ServiceProxyStatus defines the observed state of ServiceProxy

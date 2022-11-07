@@ -1,7 +1,0 @@
-apiVersion: binding.operators.coreos.com/v1alpha1
-kind: ServiceProxy
-metadata:
-  name: serviceproxy-sample
-  namespace: srm-sample
-spec:
-  proxable_service: spring-petclinic-postgresql-srm-sample

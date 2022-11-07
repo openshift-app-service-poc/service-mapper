@@ -13,7 +13,7 @@ spec:
     listKind: ServiceResourceMapList
     plural: serviceresourcemaps
     singular: serviceresourcemap
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1alpha1
     schema:

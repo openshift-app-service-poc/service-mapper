@@ -1,0 +1,28 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: srm-mongo
+rules:
+- apiGroups:
+  - "mongodbcommunity.mongodb.com"
+  resources:
+  - "mongodbcommunity"
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: srm-mongo
+subjects:
+- kind: ServiceAccount
+  name: sbo-1225-controller-manager
+  namespace: sbo-1225-system
+
