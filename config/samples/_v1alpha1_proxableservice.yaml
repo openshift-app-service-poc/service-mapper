@@ -1,6 +1,0 @@
-apiVersion: binding.operators.coreos.com/v1alpha1
-kind: ProxableService
-metadata:
-  name: proxableservice-sample
-spec:
-  # TODO(user): Add fields here

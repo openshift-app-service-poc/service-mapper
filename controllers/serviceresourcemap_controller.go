@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -36,6 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	bindingoperatorscoreoscomv1alpha1 "github.com/filariow/sbo-1225/api/v1alpha1"
+	"github.com/filariow/sbo-1225/pkg/binding"
 	"github.com/go-logr/logr"
 )
 
@@ -45,20 +47,30 @@ type ServiceResourceMapReconciler struct {
 	Scheme *runtime.Scheme
 
 	config    *rest.Config
-	informers map[schema.GroupVersionResource]cache.SharedIndexInformer
+	informers map[string]informer
 }
 
-//+kubebuilder:rbac:groups=binding.operators.coreos.com,resources=proxableservices,verbs=get;list;watch;create;update;patch;delete
+type informer struct {
+	informer   cache.SharedIndexInformer
+	ctx        context.Context
+	cancelFunc context.CancelFunc
+}
+
+func (i *informer) run() {
+	i.informer.Run(i.ctx.Done())
+}
+
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=binding.operators.coreos.com,resources=serviceproxies,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=binding.operators.coreos.com,resources=serviceproxies/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=binding.operators.coreos.com,resources=serviceproxies/finalizers,verbs=update
 //+kubebuilder:rbac:groups=binding.operators.coreos.com,resources=serviceresourcemaps,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=binding.operators.coreos.com,resources=serviceresourcemaps/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=binding.operators.coreos.com,resources=serviceresourcemaps/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the ServiceResourceMap object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
@@ -66,33 +78,30 @@ func (r *ServiceResourceMapReconciler) Reconcile(ctx context.Context, req ctrl.R
 	l := log.FromContext(ctx)
 
 	// Get ServiceResourceMap
-	l.Info("get service map")
+	l.Info("get ServiceResourceMap", "srm name", req.Name)
 	var sm bindingoperatorscoreoscomv1alpha1.ServiceResourceMap
 	if err := r.Get(ctx, req.NamespacedName, &sm); err != nil {
-		// TODO: delete proxable service
-		l.Info("service map deleted, deleting also ProxableService", "service map namespace", req.Namespace, "service map name", req.Name)
-		var pss bindingoperatorscoreoscomv1alpha1.ProxableServiceList
-		opts := &client.MatchingFields{".spec.service_resource_map": req.Namespace + "," + req.Name}
-		if err := r.List(ctx, &pss, opts); err != nil {
+		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		}
 
-		l.Info("retrieved linked ProxableServices")
-
-		for _, ps := range pss.Items {
-			l.Info("processing linked ProxableService", "proxableservice name", ps.Name)
-			if err := r.Delete(ctx, &ps); err != nil {
-				return ctrl.Result{}, err
-			}
-		}
-
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		// delete serviceproxies and Service Endpoint definitions
+		l.Info("ServiceResourceMap deleted, deleting also ServiceProxy", "srm name", req.Name)
+		return ctrl.Result{}, r.deleteLinkedResources(ctx, req.Name)
 	}
 
-	// reconciling service map
+	// reconciling resources
+	return ctrl.Result{}, r.reconcileLinkedResources(ctx, &sm)
+}
+
+func (r *ServiceResourceMapReconciler) reconcileLinkedResources(
+	ctx context.Context,
+	sm *bindingoperatorscoreoscomv1alpha1.ServiceResourceMap) error {
+	l := log.FromContext(ctx)
+
 	clusterClient, err := dynamic.NewForConfig(r.config)
 	if err != nil {
-		return ctrl.Result{}, err
+		return err
 	}
 
 	gvr := schema.GroupVersionResource{
@@ -101,27 +110,36 @@ func (r *ServiceResourceMapReconciler) Reconcile(ctx context.Context, req ctrl.R
 		Resource: sm.Spec.ServiceKindReference.Kind,
 	}
 
-	crds, err := clusterClient.Resource(gvr).Namespace(req.Namespace).List(ctx, metav1.ListOptions{})
+	crds, err := clusterClient.
+		Resource(gvr).
+		Namespace(corev1.NamespaceAll).
+		List(ctx, metav1.ListOptions{})
 	if err != nil {
-		l.Error(err, "listing resource")
-		return ctrl.Result{}, err
+		l.Error(err, "error listing resource", "GroupVersionResource", gvr)
+		return err
 	}
 
 	for _, c := range crds.Items {
-		r.createUpdateProxableService(ctx, &sm, &c)
+		if err := r.createOrUpdateServiceProxyAndSED(ctx, sm, &c); err != nil {
+			return err
+		}
 	}
 
 	// running informer for monitored resources if not running
-	if err := r.runInformer(ctx, clusterClient, gvr, &sm); err != nil {
-		return ctrl.Result{}, err
+	if err := r.runInformer(ctx, clusterClient, gvr, sm); err != nil {
+		return err
 	}
 
-	return ctrl.Result{}, nil
+	return nil
 }
 
-func (r *ServiceResourceMapReconciler) runInformer(ctx context.Context, clusterClient dynamic.Interface, gvr schema.GroupVersionResource, sm *bindingoperatorscoreoscomv1alpha1.ServiceResourceMap) error {
+func (r *ServiceResourceMapReconciler) runInformer(
+	ctx context.Context,
+	clusterClient dynamic.Interface,
+	gvr schema.GroupVersionResource,
+	sm *bindingoperatorscoreoscomv1alpha1.ServiceResourceMap) error {
 	l, _ := logr.FromContext(ctx)
-	if _, ok := r.informers[gvr]; ok {
+	if _, ok := r.informers[sm.Name]; ok {
 		// informer already running for this GVR
 		l.Info("informer yet running", "GroupVersionResource", gvr)
 		return nil
@@ -129,100 +147,210 @@ func (r *ServiceResourceMapReconciler) runInformer(ctx context.Context, clusterC
 
 	// run dynamic informer
 	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(clusterClient, time.Minute, sm.Namespace, nil)
-	informer := factory.ForResource(gvr).Informer()
-	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	i := factory.ForResource(gvr).Informer()
+	i.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			r.createUpdateProxableService(ctx, sm, obj)
+			r.createOrUpdateServiceProxyAndSED(ctx, sm, obj)
 		},
 		UpdateFunc: func(past, future interface{}) {
-			r.createUpdateProxableService(ctx, sm, future)
+			r.createOrUpdateServiceProxyAndSED(ctx, sm, future)
 		},
 		DeleteFunc: func(obj interface{}) {
-			r.deleteProxableService(ctx, obj)
+			u := obj.(*unstructured.Unstructured)
+			r.deleteLinkedResources(ctx, u.GetName())
 		},
 	})
 
 	l.Info("run informer", "GroupVersionResource", gvr)
-	r.informers[gvr] = informer
-	go informer.Run(ctx.Done())
+	c, fc := context.WithCancel(ctx)
+
+	li := informer{informer: i, ctx: c, cancelFunc: fc}
+	r.informers[sm.GetName()] = li
+	go li.run()
 
 	return nil
 }
 
-func (r *ServiceResourceMapReconciler) deleteProxableService(ctx context.Context, obj interface{}) {
-	l, _ := logr.FromContext(ctx)
-	u := obj.(*unstructured.Unstructured)
-
-	l.Info("deleting proxable service")
-
-	okey := client.ObjectKey{Namespace: corev1.NamespaceAll, Name: u.GetName() + "-" + u.GetNamespace()}
-	var ps bindingoperatorscoreoscomv1alpha1.ProxableService
-	if err := r.Get(ctx, okey, &ps); err != nil {
-		l.Error(err, "error getting proxable service for target service", "target service key", okey)
-		return
+func (r *ServiceResourceMapReconciler) createOrUpdateServiceProxyAndSED(
+	ctx context.Context,
+	sm *bindingoperatorscoreoscomv1alpha1.ServiceResourceMap,
+	obj interface{}) error {
+	sp, err := r.createOrUpdateServiceProxy(ctx, sm, obj)
+	if err != nil {
+		return err
 	}
 
-	if err := r.Delete(ctx, &ps); err != nil {
-		l.Error(err, "error deleting proxable service", "target service key", okey)
-		return
+	sec, err := r.createOrUpdateSED(ctx, sp, sm, obj)
+	if err != nil {
+		return err
 	}
+
+	sp.Status.Binding.Name = sec.Name
+	if err := r.Status().Update(ctx, sp); err != nil {
+		return fmt.Errorf("error updating serviceproxy.status.binding.name to '%s': %w", sec.Name, err)
+	}
+
+	return nil
 }
 
-func (r *ServiceResourceMapReconciler) createUpdateProxableService(ctx context.Context, sm *bindingoperatorscoreoscomv1alpha1.ServiceResourceMap, obj interface{}) {
+func (r *ServiceResourceMapReconciler) createOrUpdateServiceProxy(
+	ctx context.Context,
+	sm *bindingoperatorscoreoscomv1alpha1.ServiceResourceMap,
+	obj interface{}) (*bindingoperatorscoreoscomv1alpha1.ServiceProxy, error) {
 	l, _ := logr.FromContext(ctx)
 	u := obj.(*unstructured.Unstructured)
 
-	var ps bindingoperatorscoreoscomv1alpha1.ProxableService
-	psSpec := bindingoperatorscoreoscomv1alpha1.ProxableServiceSpec{
-		ServiceResourceMapRef: bindingoperatorscoreoscomv1alpha1.NamespacedName{
-			Name:      sm.GetName(),
-			Namespace: sm.GetNamespace(),
-		},
+	var sp bindingoperatorscoreoscomv1alpha1.ServiceProxy
+	spSpec := bindingoperatorscoreoscomv1alpha1.ServiceProxySpec{
+		ServiceResourceMapRef: sm.GetName(),
 		ServiceInstance: bindingoperatorscoreoscomv1alpha1.NamespacedName{
 			Name:      u.GetName(),
 			Namespace: u.GetNamespace(),
 		},
 	}
 
-	psname := u.GetName() + "-" + u.GetNamespace()
-	if err := r.Get(ctx, client.ObjectKey{Namespace: corev1.NamespaceAll, Name: psname}, &ps); err != nil {
+	// check if ServiceProxy already exists
+	spkey := client.ObjectKey{Namespace: u.GetNamespace(), Name: u.GetName()}
+	if err := r.Get(ctx, spkey, &sp); err != nil {
 		if !apierrors.IsNotFound(err) {
-			l.Error(err, "error getting ProxableService", "resource", u, "proxableservice", ps)
-			return
+			return nil, fmt.Errorf("error getting ServiceProxy %s: %w", sp.Namespace+"/"+sp.Name, err)
 		}
 
-		ps = bindingoperatorscoreoscomv1alpha1.ProxableService{
+		// create ServiceProxy
+		sp = bindingoperatorscoreoscomv1alpha1.ServiceProxy{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: psname,
+				Name:      u.GetName(),
+				Namespace: u.GetNamespace(),
 			},
-			Spec: psSpec,
+			Spec: spSpec,
 		}
-		if err := r.Create(ctx, &ps); err != nil {
-			l.Error(err, "error creating ProxableService", "resource", u, "proxableservice", ps)
+		if err := r.Create(ctx, &sp); err != nil {
+			return nil, fmt.Errorf("error creating ServiceProxy %s: %w", sp.Namespace+"/"+sp.Name, err)
 		}
 
+		return &sp, nil
+	}
+
+	// update ServiceProxy
+	sp.Spec = spSpec
+	if err := r.Update(ctx, &sp); err != nil {
+		l.Error(err, "error updating ServiceProxy")
+	}
+	return &sp, nil
+}
+
+func (r *ServiceResourceMapReconciler) createOrUpdateSED(
+	ctx context.Context,
+	sp *bindingoperatorscoreoscomv1alpha1.ServiceProxy,
+	sm *bindingoperatorscoreoscomv1alpha1.ServiceResourceMap,
+	o interface{}) (*corev1.Secret, error) {
+
+	obj := o.(*unstructured.Unstructured)
+
+	// Generate Service Endpoint Definition
+	sed := binding.NewServiceEndpointDefinition(ctx, r.Client, sm, sp, obj.UnstructuredContent())
+
+	okey := client.ObjectKey{Namespace: sed.ObjectMeta.Namespace, Name: sed.ObjectMeta.Name}
+	var s corev1.Secret
+
+	if err := r.Get(ctx, okey, &s); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return nil, err
+		}
+
+		if err2 := r.Create(ctx, sed); err2 != nil {
+			return nil, err2
+		}
+
+		return sed, nil
+	}
+
+	if err := r.Update(ctx, sed); err != nil {
+		return nil, err
+	}
+	return sed, nil
+}
+
+func (r *ServiceResourceMapReconciler) deleteLinkedResources(ctx context.Context, smName string) error {
+	l := log.FromContext(ctx)
+
+	// retrieve serviceproxies
+	l.Info("service map deleted, deleting also ServiceProxy", "serviceresourcemap name", smName)
+	var sps bindingoperatorscoreoscomv1alpha1.ServiceProxyList
+	opts := &client.MatchingFields{".spec.service_resource_map": smName}
+	if err := r.List(ctx, &sps, opts); err != nil {
+		return err
+	}
+
+	// delete serviceproxies and seds
+	for _, sp := range sps.Items {
+		l.Info("processing impacted ServiceProxies", "serviceproxy namespace", sp.Namespace, "serviceproxy name", sp.Name)
+
+		if sn := sp.Status.Binding.Name; sn != "" {
+			l.Info("deleting linked Service Endpoint Definition", "sed", sn, "namespace", sp.Namespace)
+			if err := r.deleteSecretIfExists(ctx, sp.Namespace, sn); err != nil {
+				return err
+			}
+		}
+
+		// delete ServiceProxy
+		if err := r.Delete(ctx, &sp); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *ServiceResourceMapReconciler) deleteSecretIfExists(ctx context.Context, namespace, name string) error {
+	var sec corev1.Secret
+	skey := client.ObjectKey{Namespace: namespace, Name: name}
+	if err := r.Get(ctx, skey, &sec); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+		return nil
+	}
+
+	if err := r.Delete(ctx, &sec); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *ServiceResourceMapReconciler) deleteServiceProxy(ctx context.Context, obj interface{}) {
+	l, _ := logr.FromContext(ctx)
+	u := obj.(*unstructured.Unstructured)
+
+	l.Info("deleting service proxy")
+
+	okey := client.ObjectKey{Namespace: u.GetNamespace(), Name: u.GetName()}
+	var sp bindingoperatorscoreoscomv1alpha1.ServiceProxy
+	if err := r.Get(ctx, okey, &sp); err != nil {
+		l.Error(err, "error getting proxable service for target service", "target service key", okey)
 		return
 	}
 
-	ps.Spec = psSpec
-	if err := r.Update(ctx, &ps); err != nil {
-		l.Error(err, "error updating ProxableService", "resource", u, "proxableservice", ps)
+	if err := r.Delete(ctx, &sp); err != nil {
+		l.Error(err, "error deleting proxable service", "target service key", okey)
+		return
 	}
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ServiceResourceMapReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.config = mgr.GetConfig()
-	r.informers = make(map[schema.GroupVersionResource]cache.SharedIndexInformer)
+	r.informers = make(map[string]informer)
 
 	mgr.
 		GetFieldIndexer().
 		IndexField(context.Background(),
-			&bindingoperatorscoreoscomv1alpha1.ProxableService{},
+			&bindingoperatorscoreoscomv1alpha1.ServiceProxy{},
 			".spec.service_resource_map",
 			func(o client.Object) []string {
-				sm := o.(*bindingoperatorscoreoscomv1alpha1.ProxableService)
-				return []string{sm.Spec.ServiceResourceMapRef.Name + "," + sm.Spec.ServiceResourceMapRef.Namespace}
+				sm := o.(*bindingoperatorscoreoscomv1alpha1.ServiceProxy)
+				return []string{sm.Spec.ServiceResourceMapRef}
 			})
 
 	return ctrl.NewControllerManagedBy(mgr).

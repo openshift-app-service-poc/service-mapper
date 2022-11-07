@@ -2,5 +2,4 @@
 resources:
 - _v1alpha1_serviceresourcemap.yaml
 - _v1alpha1_serviceproxy.yaml
-- _v1alpha1_proxableservice.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

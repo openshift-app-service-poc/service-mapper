@@ -1,0 +1,43 @@
+apiVersion: binding.operators.coreos.com/v1alpha1
+kind: ServiceResourceMap
+metadata:
+  name: srm-sample-mongo
+spec:
+  service_kind_reference:
+    api_group: "mongodbcommunity.mongodb.com/v1"
+    kind: "mongodbcommunity"
+  service_map:
+    type: "mongodb"
+    service.binding: "path={.spec.users[0].passwordSecretRef.name},objectType=Secret"
+    username: "path={.spec.users[0].name}"
+    db: "path={.spec.users[0].db}"
+    host: "path={.metadata.name}"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: srm-mongo
+rules:
+- apiGroups:
+  - "mongodbcommunity.mongodb.com"
+  resources:
+  - mongodbcommunity
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: srm-mongo
+subjects:
+- kind: ServiceAccount
+  name: sbo-1225-controller-manager
+  namespace: sbo-1225-system
+
