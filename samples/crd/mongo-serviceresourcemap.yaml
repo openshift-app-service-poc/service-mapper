@@ -8,7 +8,7 @@ spec:
     kind: "mongodbcommunity"
   service_map:
     type: "mongodb"
-    service.binding: "path={.spec.users[0].passwordSecretRef.name},objectType=Secret"
+    service.binding: "path={.spec.users[0].passwordSecretRef.name},objectType=Secret,sourceKey=password"
     username: "path={.spec.users[0].name}"
     db: "path={.spec.users[0].db}"
     host: "path={.metadata.name}"

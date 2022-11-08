@@ -86,13 +86,6 @@ func processRefTarget(ctx context.Context, cli client.Client, namespace string, 
 
 		d := make(map[string]string, len(s.Data))
 		for k, v := range s.Data {
-			// var buf []byte
-			// _, err := base64.StdEncoding.Decode(buf, v)
-			// if err != nil {
-			// 	l.Error(err, "can not base64 decode secret entry", "key", k, "value", v)
-			// }
-
-			// d[k] = bytes.NewBuffer(buf).String()
 			d[k] = string(v)
 		}
 
@@ -108,6 +101,36 @@ func processRefTarget(ctx context.Context, cli client.Client, namespace string, 
 	}
 
 	return nil, fmt.Errorf("invalid objectType: %s", refType)
+}
+
+func processSecretTarget(ctx context.Context, cli client.Client, namespace string, ss []string, refObj string) (map[string]string, error) {
+	s := corev1.Secret{}
+	skey := client.ObjectKey{Namespace: namespace, Name: refObj}
+	if err := cli.Get(ctx, skey, &s); err != nil {
+		return nil, fmt.Errorf("can not retrieve Secret '%s/%s': %w", namespace, refObj, err)
+	}
+
+	sk := func() string {
+		if len(ss) != 3 {
+			return ""
+		}
+
+		if ssfs := strings.Split(ss[2], "="); len(ssfs) == 2 {
+			return ssfs[1]
+		}
+
+		return ""
+	}()
+
+	d := make(map[string]string, len(s.Data))
+	for k, v := range s.Data {
+		if sk == "" || sk == k {
+			d[k] = string(v)
+		}
+	}
+
+	return d, nil
+
 }
 
 func isJsonpath(v string) bool {
