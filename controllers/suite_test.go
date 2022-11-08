@@ -31,7 +31,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	bindingoperatorscoreoscomv1alpha1 "github.com/filariow/sbo-1225/api/v1alpha1"
+	bindingoperatorscoreoscomv1alpha1 "github.com/openshift-app-service-poc/service-mapper/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 

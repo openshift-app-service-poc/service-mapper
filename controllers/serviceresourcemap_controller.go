@@ -36,9 +36,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	bindingoperatorscoreoscomv1alpha1 "github.com/filariow/sbo-1225/api/v1alpha1"
-	"github.com/filariow/sbo-1225/pkg/binding"
 	"github.com/go-logr/logr"
+	bindingoperatorscoreoscomv1alpha1 "github.com/openshift-app-service-poc/service-mapper/api/v1alpha1"
+	"github.com/openshift-app-service-poc/service-mapper/pkg/binding"
 )
 
 // ServiceResourceMapReconciler reconciles a ServiceResourceMap object

@@ -1,4 +1,4 @@
-module github.com/filariow/sbo-1225
+module github.com/openshift-app-service-poc/service-mapper
 
 go 1.18
 

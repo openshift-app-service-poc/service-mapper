@@ -31,8 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	bindingoperatorscoreoscomv1alpha1 "github.com/filariow/sbo-1225/api/v1alpha1"
-	"github.com/filariow/sbo-1225/controllers"
+	bindingoperatorscoreoscomv1alpha1 "github.com/openshift-app-service-poc/service-mapper/api/v1alpha1"
+	"github.com/openshift-app-service-poc/service-mapper/controllers"
 	//+kubebuilder:scaffold:imports
 )
 

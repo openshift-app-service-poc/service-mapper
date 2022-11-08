@@ -23,8 +23,8 @@ roleRef:
   name: srm-rds-psql
 subjects:
 - kind: ServiceAccount
-  name: sbo-1225-controller-manager
-  namespace: sbo-1225-system
+  name: service-mapper-controller-manager
+  namespace: service-mapper-system
 ---
 apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceResourceMap

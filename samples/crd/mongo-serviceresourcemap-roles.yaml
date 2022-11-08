@@ -23,6 +23,6 @@ roleRef:
   name: srm-mongo
 subjects:
 - kind: ServiceAccount
-  name: sbo-1225-controller-manager
-  namespace: sbo-1225-system
+  name: service-mapper-controller-manager
+  namespace: service-mapper-system
 

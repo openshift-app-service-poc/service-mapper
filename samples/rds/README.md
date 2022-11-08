@@ -35,9 +35,9 @@ Create a Postgres DBInstance with AWS RDS by applying the manifests stored into 
 crc start
 eval $(crc oc-env)
 oc registry login --skip-check
-make docker-build IMG=$(oc registry info)/sbo-1225-system/srm-controller:latest
-docker push $(oc registry info)/sbo-1225-system/srm-controller:latest
-make deploy IMG=image-registry.openshift-image-registry.svc:5000/sbo-1225-system/srm-controller:latest
+make docker-build IMG=$(oc registry info)/service-mapper-system/srm-controller:latest
+docker push $(oc registry info)/service-mapper-system/srm-controller:latest
+make deploy IMG=image-registry.openshift-image-registry.svc:5000/service-mapper-system/srm-controller:latest
 ```
 
 

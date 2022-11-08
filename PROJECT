@@ -4,27 +4,27 @@ layout:
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
-projectName: sbo-1225
-repo: github.com/filariow/sbo-1225
+projectName: service-mapper
+repo: github.com/openshift-app-service-poc/service-mapper
 resources:
 - api:
     crdVersion: v1
   controller: true
   domain: binding.operators.coreos.com
   kind: ServiceResourceMap
-  path: github.com/filariow/sbo-1225/api/v1alpha1
+  path: github.com/openshift-app-service-poc/service-mapper/api/v1alpha1
   version: v1alpha1
 - api:
     crdVersion: v1
   controller: true
   domain: binding.operators.coreos.com
   kind: ServiceProxy
-  path: github.com/filariow/sbo-1225/api/v1alpha1
+  path: github.com/openshift-app-service-poc/service-mapper/api/v1alpha1
   version: v1alpha1
 - api:
     crdVersion: v1
   domain: binding.operators.coreos.com
   kind: ProxableService
-  path: github.com/filariow/sbo-1225/api/v1alpha1
+  path: github.com/openshift-app-service-poc/service-mapper/api/v1alpha1
   version: v1alpha1
 version: "3"
