@@ -1,0 +1,42 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: srm-rds-psql
+rules:
+- apiGroups:
+  - "rds.services.k8s.aws"
+  resources:
+  - "dbinstances"
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: srm-rds-psql
+subjects:
+- kind: ServiceAccount
+  name: sbo-1225-controller-manager
+  namespace: sbo-1225-system
+---
+apiVersion: binding.operators.coreos.com/v1alpha1
+kind: ServiceResourceMap
+metadata:
+  name: srm-sample-postgresql
+spec:
+  service_kind_reference:
+    api_group: rds.services.k8s.aws/v1alpha1
+    kind: dbinstances
+  service_map:
+    type: "path={.spec.engine}"
+    host: "path={.status.endpoint.address}"
+    port: "path={.status.endpoint.port}"
+    password: "path={.spec.masterUserPassword.name},objectType=Secret,sourceKey=password"
+
