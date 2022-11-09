@@ -50,6 +50,14 @@ When a **Developer** creates an instance of the service in it's project/namespac
 
 The **Developer** can now use the ServiceProxy with the ServiceBindingOperator to bind an application to the service.
 
+
+## Samples
+
+The following samples are available in the `samples` folder:
+- [MongoDB and Minikube](./samples/crd/README.md)
+- [Amazon RDS and crc (Openshift 4)](./samples/rds/README.md)
+
+
 ## Getting Started
 You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
 **Note:** Your controller will automatically use the current context in your kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
