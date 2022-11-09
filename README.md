@@ -1,8 +1,54 @@
-# service-mapper
-This project will demonstrate how to create provisioned services vi service resource maps
+# Service Mapper
+
+This project will demonstrate how to create provisioned services via service resource maps.
 
 ## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+
+This project introduces the following CRDs:
+* **ServiceResourceMap**: defines the rules needed to generate a ServiceEndpointDefinition for a GroupVersionResource. ServiceResourceMaps are Cluster scoped.
+    ```yaml
+    apiVersion: binding.operators.coreos.com/v1alpha1
+    kind: ServiceResourceMap
+    metadata:
+      annotations:
+        name: srm-sample-postgresql
+    spec:
+      service_kind_reference:
+        api_group: rds.services.k8s.aws/v1alpha1
+        kind: dbinstances
+      service_map:
+        host: path={.status.endpoint.address}
+        password: path={.spec.masterUserPassword.name},objectType=Secret,sourceKey=password
+        port: path={.status.endpoint.port}
+        type: path={.spec.engine}
+    ```
+* **ServiceProxy**: Namespaced resource that implements the ServiceBinding's specification for Provisioned Service.
+    ```yaml
+    apiVersion: binding.operators.coreos.com/v1alpha1
+    kind: ServiceProxy
+    metadata:
+      name: srm-rds-psql-sample
+      namespace: srm-rds-sample
+    spec:
+      service_instance:
+        name: srm-rds-psql-sample
+        namespace: srm-rds-sample
+      service_resource_map: srm-sample-postgresql
+    status:
+      binding:
+        name: srm-rds-psql-sample-sed
+   ```
+
+### Users Experience
+
+**Administrator** creates a ServiceResourceMap, the **operator** looks for instances of the services referenced in the ServiceResourceMap and creates a ServiceProxy for each instance.
+ServiceProxies are created in the same project/namespace of the service instance.
+
+The **operator** also monitors for events on instances referenced by the published ServiceResourceMap, and creates/updates/deletes related ServiceProxies and ServiceEndpointDefinitions.
+
+When a **Developer** creates an instance of the service in it's project/namespace, the **operator** will then create the ServiceProxy and ServiceEndpointDefinition in the same project/namespace.
+
+The **Developer** can now use the ServiceProxy with the ServiceBindingOperator to bind an application to the service.
 
 ## Getting Started
 You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
@@ -40,9 +86,6 @@ UnDeploy the controller to the cluster:
 ```sh
 make undeploy
 ```
-
-## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
 
 ### How it works
 This project aims to follow the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)
