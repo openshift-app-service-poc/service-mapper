@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: srm-rds-sample-app-deployment
+  namespace: srm-rds-sample
+  labels:
+    app: srm-rds-sample-app
+spec:
+  selector:
+    matchLabels:
+      app: srm-rds-sample-app
+  template:
+    metadata:
+      labels:
+        app: srm-rds-sample-app
+    spec:
+      containers:
+      - name: busybox
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        command: ['sh', '-c', '(ls -lh /bindings/srm-rds-psql-sample || true) && sleep infinity']

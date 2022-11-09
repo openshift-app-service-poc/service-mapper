@@ -105,3 +105,32 @@ kubectl get -n srm-rds-sample secrets srm-rds-psql-sample-sed -o yaml
 kubectl get -n srm-rds-sample secrets srm-rds-psql-sample-sed --output json | jq '.data | map_values(@base64d)'
 ```
 
+## Deploy an application and bind to the ServiceProxy
+
+Now you can deploy an application, and use the ServiceProxy to bind it to the Service.
+
+```
+kubectl apply -f samples/rds/app
+```
+
+And inspect the volumens attached to the created pod
+
+```
+kubectl get pods -l app=srm-rds-sample-app --output jsonpath='{.items[0].spec.volumes[0]}'
+```
+
+Finally we can inspect the content of the binding folder by exec-ing into the pod's container
+
+```
+kubectl exec -it $(kubectl get pods -l app=srm-rds-sample-app --output jsonpath='{.items[0].metadata.name}') -- sh
+```
+
+Into the shell the previous command created, we can inspect the projected data
+
+```
+ls -lh /bindings/srm-rds-psql-sample
+
+# try read some projected secrets
+cat /bindings/srm-rds-psql-sample/host
+```
+
