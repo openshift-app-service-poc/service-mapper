@@ -14,6 +14,8 @@ kind: ClusterRole
 metadata:
   creationTimestamp: null
   name: sbo-srm
+  labels:
+    servicebinding.io/controller: "true"
 rules:
 - apiGroups:
   - "binding.operators.coreos.com"
@@ -22,18 +24,5 @@ rules:
   verbs:
   - get
   - list
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: sbo-srm-rolebinding
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: sbo-srm
-subjects:
-- kind: ServiceAccount
-  name: service-binding-operator
-  namespace: openshift-operators
-
+  - watch
 
