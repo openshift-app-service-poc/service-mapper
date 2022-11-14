@@ -40,7 +40,7 @@ func extractSecrets(ctx context.Context, client client.Client, namespace string,
 	for k, v := range rules {
 		ss, err := processTarget(ctx, client, namespace, k, v, obj)
 		if err != nil {
-			l.Error(err, "can not process target", "target", obj, "rule", v)
+			l.Info("can not process target", "rule", v, "error", err)
 			continue
 		}
 
