@@ -146,7 +146,7 @@ func (r *ServiceResourceMapReconciler) runInformer(
 	}
 
 	// run dynamic informer
-	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(clusterClient, time.Minute, sm.Namespace, nil)
+	factory := dynamicinformer.NewDynamicSharedInformerFactory(clusterClient, time.Minute)
 	i := factory.ForResource(gvr).Informer()
 	i.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
@@ -156,8 +156,7 @@ func (r *ServiceResourceMapReconciler) runInformer(
 			r.createOrUpdateServiceProxyAndSED(ctx, sm, future)
 		},
 		DeleteFunc: func(obj interface{}) {
-			u := obj.(*unstructured.Unstructured)
-			r.deleteLinkedResources(ctx, u.GetName())
+			r.deleteServiceProxyAndSED(ctx, obj)
 		},
 	})
 
@@ -193,6 +192,13 @@ func (r *ServiceResourceMapReconciler) createOrUpdateServiceProxyAndSED(
 	return nil
 }
 
+func (r *ServiceResourceMapReconciler) deleteServiceProxyAndSED(ctx context.Context, obj interface{}) {
+	u := obj.(*unstructured.Unstructured)
+
+	r.deleteServiceProxy(ctx, obj)
+	r.deleteSecretIfExists(ctx, u.GetNamespace(), u.GetName()+"-sed")
+}
+
 func (r *ServiceResourceMapReconciler) createOrUpdateServiceProxy(
 	ctx context.Context,
 	sm *bindingoperatorscoreoscomv1alpha1.ServiceResourceMap,
@@ -213,7 +219,7 @@ func (r *ServiceResourceMapReconciler) createOrUpdateServiceProxy(
 	spkey := client.ObjectKey{Namespace: u.GetNamespace(), Name: u.GetName()}
 	if err := r.Get(ctx, spkey, &sp); err != nil {
 		if !apierrors.IsNotFound(err) {
-			return nil, fmt.Errorf("error getting ServiceProxy %s: %w", sp.Namespace+"/"+sp.Name, err)
+			return nil, fmt.Errorf("error getting ServiceProxy %s/%s: %w", sp.Namespace, sp.Name, err)
 		}
 
 		// create ServiceProxy
@@ -225,7 +231,7 @@ func (r *ServiceResourceMapReconciler) createOrUpdateServiceProxy(
 			Spec: spSpec,
 		}
 		if err := r.Create(ctx, &sp); err != nil {
-			return nil, fmt.Errorf("error creating ServiceProxy %s: %w", sp.Namespace+"/"+sp.Name, err)
+			return nil, fmt.Errorf("error creating ServiceProxy %s/%s: %w", sp.Namespace, sp.Name, err)
 		}
 
 		return &sp, nil
