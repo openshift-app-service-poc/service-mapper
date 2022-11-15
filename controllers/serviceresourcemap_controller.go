@@ -150,12 +150,18 @@ func (r *ServiceResourceMapReconciler) runInformer(
 	i := factory.ForResource(gvr).Informer()
 	i.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
+			u := obj.(*unstructured.Unstructured)
+			l.Info("new monitored instance found: creating SP and SED", "srm", sm.Namespace+"/"+sm.Name, "target", u.GetNamespace()+"/"+u.GetName())
 			r.createOrUpdateServiceProxyAndSED(ctx, sm, obj)
 		},
 		UpdateFunc: func(past, future interface{}) {
+			u := future.(*unstructured.Unstructured)
+			l.Info("monitored instance updated: updating SP and SED", "srm", sm.Namespace+"/"+sm.Name, "target", u.GetNamespace()+"/"+u.GetName())
 			r.createOrUpdateServiceProxyAndSED(ctx, sm, future)
 		},
 		DeleteFunc: func(obj interface{}) {
+			u := obj.(*unstructured.Unstructured)
+			l.Info("monitored instance deleted: deleting SP and SED", "srm", sm.Namespace+"/"+sm.Name, "target", u.GetNamespace()+"/"+u.GetName())
 			r.deleteServiceProxyAndSED(ctx, obj)
 		},
 	})
