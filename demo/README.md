@@ -9,7 +9,7 @@ Provisioned Services have a field in their specification (namely `.status.bindin
 In this secret, you can find the binding information, e.g., username, password, connection strings, etc.
 
 Alternatively, you can annotate the services with a set of rules the Service Binding Operator will use to generate the Service Endpoint Definition.
-It will also modify the target resource by adding the `.status.binding.name` to its specification.
+It will also modify the target resource by adding the `.status.binding.name` field to its specification.
 
 These approaches rely on service Custom Resource Definitions (CRDs) changes that are usually difficult to obtain.
 
