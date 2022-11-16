@@ -1,0 +1,16 @@
+apiVersion: rds.services.k8s.aws/v1alpha1
+kind: DBInstance
+metadata:
+  name: srm-rds-psql-sample-2
+  namespace: srm-rds-sample
+spec:
+  allocatedStorage: 20
+  dbInstanceClass: db.t3.micro
+  dbInstanceIdentifier: rds-psql-sample-2
+  engine: postgres
+  engineVersion: "14"
+  masterUsername: "postgres"
+  masterUserPassword:
+    namespace: srm-rds-sample
+    name: srm-rds-psql-sample-password
+    key: password

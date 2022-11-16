@@ -46,7 +46,9 @@ crc console
 
 ## Install Service Binding Operator
 
-All manifests for installing the Service Binding Operator are stored in the `operators/sbo` folder.
+Install the Service Binding Operator from the "Operator Hub", as you have done for [ACK Operator](#install-ack-operator)
+
+Register the ClusterRole to allow the Service Binding Operator to get,list,watch Service Proxies.
 
 ```
 kubectl apply -f samples/rds/operators/sbo
@@ -65,6 +67,8 @@ Create a Postgres DBInstance with AWS RDS by applying the manifests stored into 
 ```
 kubectl apply -f samples/rds/postgres
 ```
+
+> To access the database you may need to configure the inbound rules for the security group associated to the database.
 
 ## Run the Service Mapper Operator into CRC
 

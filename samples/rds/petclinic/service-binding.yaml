@@ -1,0 +1,16 @@
+apiVersion: binding.operators.coreos.com/v1alpha1
+kind: ServiceBinding
+metadata:
+  name:
+    srm-rds-psql-petclinic-sample
+spec:
+  services:
+    - group: binding.operators.coreos.com
+      version: v1alpha1
+      kind: ServiceProxy
+      name: srm-rds-psql-sample
+  application:
+    name: spring-petclinic
+    group: apps
+    version: v1
+    resource: deployments

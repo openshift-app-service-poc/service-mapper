@@ -35,8 +35,9 @@ spec:
     api_group: rds.services.k8s.aws/v1alpha1
     kind: dbinstances
   service_map:
-    type: "path={.spec.engine}"
+    type: "postgresql"
     host: "path={.status.endpoint.address}"
     port: "path={.status.endpoint.port}"
     password: "path={.spec.masterUserPassword.name},objectType=Secret,sourceKey=password"
-
+    username: "path={.spec.masterUsername}"
+    database: "postgres"
