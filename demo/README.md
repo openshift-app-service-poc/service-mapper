@@ -68,6 +68,24 @@ _Developer_ creates a new instance of the Service and uses the Service Binding O
 
 Bind the spring petclinic demo application to a PaaS Postgresql database running on Amazon (Amazon RDS).
 
+**We have**
+* Openshift cluster
+	* Operators
+		* AWS RDS
+		* Service Binding Operator 1.3.1
+		* Service Mapper Operator
+* Postgresql database on Amazon RDS
+* Application deployed (not binded)
+
+```mermaid
+graph TD
+    A[Application];
+    B[Database];
+```
+
+**We want**
+1. Bind the application to the database using the Service Binding Operator
+
 ```mermaid
 graph TD
 	A[Application];
@@ -88,24 +106,6 @@ graph TD
 	F --> G;
     E -.-> |implements| G;
 ```
-
-**We have**
-* Openshift cluster
-	* Operators
-		* AWS RDS
-		* Service Binding Operator 1.3.1
-		* Service Mapper Operator
-* Postgresql database on Amazon RDS
-* Application deployed (not binded)
-
-```mermaid
-graph TD
-    A[Application];
-    B[Database];
-```
-
-**We want**
-1. Bind the application to the database using the Service Binding Operator
 
 **Demo**
 
