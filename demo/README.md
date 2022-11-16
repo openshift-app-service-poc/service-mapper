@@ -3,7 +3,7 @@
 ## Feature/problem description
 
 We investigated how to simplify the Service Binding Operator onboarding of new services.
-At the time of writing, SBO can bind services that implement the Provisioned Service specification or whose resources has been properly annotated.
+At the time of writing, SBO can bind services that implement the Provisioned Service specification or whose resources have been properly annotated.
 
 Provisioned Services have a field in their specification (namely `.status.binding.name`) that references to a Secret, also named Service Endpoint Definition.
 In this secret, you can find the binding information, e.g., username, password, connection strings, etc.
