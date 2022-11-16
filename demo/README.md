@@ -57,7 +57,7 @@ The SMO introduces the following two Custom Resources (CR):
         name: srm-rds-psql-sample-sed
    ```
 
-The SMO looks for ServiseResourceMaps and watches resources pointed by each ServiceResourceMap.
+The SMO looks for ServiceResourceMaps and watches resources pointed by each ServiceResourceMap.
 
 ## Personas
 
